@@ -1,12 +1,10 @@
 from pathlib import Path
+from functools import lru_cache
 
 import numpy as np
 import pandas as pd
 
-from finagent.market.data import (
-    universe,
-    identify_company
-)
+from finagent.config.universe import universe
 
 
 # ============================================================
@@ -30,6 +28,7 @@ FORECAST_DATA_PATH = (
 # LOAD DATA
 # ============================================================
 
+@lru_cache(maxsize=1)
 def load_forecast_data():
 
     data = pd.read_csv(

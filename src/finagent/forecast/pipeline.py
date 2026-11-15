@@ -1,12 +1,12 @@
 from pathlib import Path
+from functools import lru_cache
 
 import joblib
 import numpy as np
 
-from tensorflow.keras.models import load_model
-
-from finagent.market.data import identify_company
+from finagent.config.company_matching import resolve_company, identification_message
 from .data import get_latest_window
+from finagent.config.universe import universe
 
 
 # ============================================================
@@ -29,28 +29,17 @@ MODEL_DIR = (
 # LOAD ARTIFACTS
 # ============================================================
 
-model = load_model(
-    MODEL_DIR
-    / "lstm_forecast.keras"
-)
+@lru_cache(maxsize=1)
+def load_forecast_artifacts():
+    """Read existing artifacts on first prediction; imports never load TensorFlow."""
+    from tensorflow.keras.models import load_model
 
-
-scaler = joblib.load(
-    MODEL_DIR
-    / "feature_scaler.pkl"
-)
-
-
-feature_columns = joblib.load(
-    MODEL_DIR
-    / "feature_columns.pkl"
-)
-
-
-window_size = joblib.load(
-    MODEL_DIR
-    / "window_size.pkl"
-)
+    return (
+        load_model(MODEL_DIR / "lstm_forecast.keras", compile=False),
+        joblib.load(MODEL_DIR / "feature_scaler.pkl"),
+        joblib.load(MODEL_DIR / "feature_columns.pkl"),
+        joblib.load(MODEL_DIR / "window_size.pkl"),
+    )
 
 
 # ============================================================
@@ -58,16 +47,17 @@ window_size = joblib.load(
 # ============================================================
 
 def forecast_stock(
-    question
+    question, *, company=None
 ):
 
     # --------------------------------------------------------
     # 1. Identifier l'entreprise
     # --------------------------------------------------------
 
-    company = identify_company(
-        question
-    )
+    resolution = resolve_company(question)
+    company = company or resolution.company
+    if company is not None and company not in universe:
+        raise ValueError("Unknown company scope.")
 
 
     if company is None:
@@ -76,10 +66,7 @@ def forecast_stock(
             "company": None,
             "predicted_return": None,
             "direction": None,
-            "answer": (
-                "I could not identify a company "
-                "from the FinAgent-X universe."
-            )
+            "answer": identification_message(resolution)
         }
 
 
@@ -87,6 +74,7 @@ def forecast_stock(
     # 2. Récupérer les 60 derniers jours
     # --------------------------------------------------------
 
+    model, scaler, feature_columns, window_size = load_forecast_artifacts()
     window = get_latest_window(
         company=company,
         feature_columns=feature_columns,
@@ -169,12 +157,12 @@ def forecast_stock(
 
     answer = (
         f"Based on the latest {window_size} trading sessions "
-        f"available through {latest_date}, the LSTM forecasting "
+        f"available through {latest_date}, the experimental forecasting "
         f"model estimates {company}'s next-session return at "
         f"{predicted_return:.2f}%. "
         f"The estimated direction is {direction}. "
         f"This is a model-based quantitative signal, "
-        f"not a guaranteed market outcome."
+        f"not a guaranteed market outcome. Not investment advice."
     )
 
 

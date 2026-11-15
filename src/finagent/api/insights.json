@@ -1,0 +1,64 @@
+{
+  "retrieval_questions": 50,
+  "retrieval": [
+    {
+      "Method": "FAISS Similarity",
+      "Hit@5": 0.84,
+      "Precision@5": 0.172,
+      "Recall@5": 0.82,
+      "MRR@5": 0.649667
+    },
+    {
+      "Method": "FAISS MMR",
+      "Hit@5": 0.78,
+      "Precision@5": 0.156,
+      "Recall@5": 0.76,
+      "MRR@5": 0.617333
+    },
+    {
+      "Method": "FAISS + Reranker",
+      "Hit@5": 0.88,
+      "Precision@5": 0.176,
+      "Recall@5": 0.84,
+      "MRR@5": 0.799667
+    }
+  ],
+  "generation": {
+    "Correctness": 0.813,
+    "Answer Relevance": 0.86,
+    "Faithfulness": 1.0
+  },
+  "forecasting": [
+    {
+      "Model": "Naive Zero Return",
+      "MAE": 1.300864,
+      "RMSE": 1.997718,
+      "Directional Accuracy": 0.569009
+    },
+    {
+      "Model": "LSTM",
+      "MAE": 1.302859,
+      "RMSE": 1.993925,
+      "Directional Accuracy": 0.519226
+    },
+    {
+      "Model": "BiLSTM",
+      "MAE": 1.305629,
+      "RMSE": 1.995752,
+      "Directional Accuracy": 0.518335
+    },
+    {
+      "Model": "Transformer",
+      "MAE": 1.305755,
+      "RMSE": 1.9975,
+      "Directional Accuracy": 0.430991
+    }
+  ],
+  "forecast_provenance": {
+    "notebook": "src/forecasting_models.ipynb",
+    "cell_index": 34,
+    "execution_count": 37,
+    "note": "Saved output from the latest manual four-model comparison; no cells executed."
+  },
+  "selected_model": "LSTM"
+}

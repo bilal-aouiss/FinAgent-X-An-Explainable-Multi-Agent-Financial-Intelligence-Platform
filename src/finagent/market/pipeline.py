@@ -1,162 +1,148 @@
-import os
+from functools import lru_cache
 
-from getpass import getpass
-
-from dotenv import load_dotenv
-
-from langchain_core.output_parsers import StrOutputParser
-from langchain_core.prompts import ChatPromptTemplate
-from langchain_google_genai import ChatGoogleGenerativeAI
-
-from .data import (
-    identify_company,
-    get_latest_market_data
-)
+from finagent.config.company_matching import resolve_company, identification_message
+from .data import get_latest_market_data
+from finagent.config.llm import create_llm, invoke_llm
+from finagent.config.universe import universe
 
 
-# ============================================================
-# 1. ENVIRONMENT
-# ============================================================
+@lru_cache(maxsize=1)
+def get_market_chain():
+    """Initialize the client only for an actual market analysis request."""
+    from langchain_core.output_parsers import StrOutputParser
+    from langchain_core.prompts import ChatPromptTemplate
 
-load_dotenv()
+    # ============================================================
+    # 1. ENVIRONMENT
+    # ============================================================
 
 
-if not os.getenv(
-    "GOOGLE_API_KEY"
-):
 
-    os.environ[
-        "GOOGLE_API_KEY"
-    ] = getpass(
-        "Google API Key: "
+    # ============================================================
+    # 2. LLM
+    # ============================================================
+
+    llm = create_llm()
+
+
+    # ============================================================
+    # 3. MARKET PROMPT
+    # ============================================================
+
+    market_prompt = ChatPromptTemplate.from_messages(
+        [
+            (
+                "system",
+                """
+    You are the Market Analysis Agent of FinAgent-X.
+
+    You analyze market data and technical indicators
+    for Malaysian listed companies.
+
+    Use ONLY the market data provided to you.
+
+    Rules:
+
+    1. Do not invent prices or indicators.
+
+    2. Always mention the date of the market observation.
+
+    3. Answer the user's specific question.
+
+    4. Be concise and financially precise.
+
+    5. Technical indicators are signals, not guarantees
+       of future price movements.
+
+    6. Do not make a forecast unless a forecast model
+       explicitly provides one.
+
+    7. If the available market data is insufficient,
+       say so clearly.
+    """
+            ),
+
+            (
+                "human",
+                """
+    QUESTION:
+
+    {question}
+
+
+    COMPANY:
+
+    {company}
+
+
+    LATEST MARKET DATA:
+
+    Date: {date}
+
+    Close: {close}
+
+    Daily return (%): {daily_return}
+
+    Intraday return (%): {intraday_return}
+
+    Daily range (%): {daily_range}
+
+    Volume: {volume}
+
+    Volume change (%): {volume_change}
+
+    RSI 14: {rsi_14}
+
+    SMA 20: {sma_20}
+
+    SMA 50: {sma_50}
+
+    SMA 200: {sma_200}
+
+    EMA 12: {ema_12}
+
+    EMA 26: {ema_26}
+
+    MACD: {macd}
+
+    MACD signal: {macd_signal}
+
+    MACD histogram: {macd_histogram}
+
+    ATR 14: {atr_14}
+
+    Bollinger upper: {bollinger_upper}
+
+    Bollinger middle: {bollinger_middle}
+
+    Bollinger lower: {bollinger_lower}
+
+    Bollinger width (%): {bollinger_width}
+
+    Annualized volatility (%): {volatility_20}
+
+    10-day momentum (%): {momentum_10}
+
+
+    ANSWER:
+    """
+            )
+        ]
     )
 
 
-# ============================================================
-# 2. LLM
-# ============================================================
+    # ============================================================
+    # 4. GENERATION CHAIN
+    # ============================================================
 
-llm = ChatGoogleGenerativeAI(
-    model="gemini-2.5-flash",
-    temperature=0
-)
-
-
-# ============================================================
-# 3. MARKET PROMPT
-# ============================================================
-
-market_prompt = ChatPromptTemplate.from_messages(
-    [
-        (
-            "system",
-            """
-You are the Market Analysis Agent of FinAgent-X.
-
-You analyze market data and technical indicators
-for Malaysian listed companies.
-
-Use ONLY the market data provided to you.
-
-Rules:
-
-1. Do not invent prices or indicators.
-
-2. Always mention the date of the market observation.
-
-3. Answer the user's specific question.
-
-4. Be concise and financially precise.
-
-5. Technical indicators are signals, not guarantees
-   of future price movements.
-
-6. Do not make a forecast unless a forecast model
-   explicitly provides one.
-
-7. If the available market data is insufficient,
-   say so clearly.
-"""
-        ),
-
-        (
-            "human",
-            """
-QUESTION:
-
-{question}
+    market_chain = (
+        market_prompt
+        | llm
+        | StrOutputParser()
+    )
 
 
-COMPANY:
-
-{company}
-
-
-LATEST MARKET DATA:
-
-Date: {date}
-
-Close: {close}
-
-Daily return (%): {daily_return}
-
-Intraday return (%): {intraday_return}
-
-Daily range (%): {daily_range}
-
-Volume: {volume}
-
-Volume change (%): {volume_change}
-
-RSI 14: {rsi_14}
-
-SMA 20: {sma_20}
-
-SMA 50: {sma_50}
-
-SMA 200: {sma_200}
-
-EMA 12: {ema_12}
-
-EMA 26: {ema_26}
-
-MACD: {macd}
-
-MACD signal: {macd_signal}
-
-MACD histogram: {macd_histogram}
-
-ATR 14: {atr_14}
-
-Bollinger upper: {bollinger_upper}
-
-Bollinger middle: {bollinger_middle}
-
-Bollinger lower: {bollinger_lower}
-
-Bollinger width (%): {bollinger_width}
-
-Annualized volatility (%): {volatility_20}
-
-10-day momentum (%): {momentum_10}
-
-
-ANSWER:
-"""
-        )
-    ]
-)
-
-
-# ============================================================
-# 4. GENERATION CHAIN
-# ============================================================
-
-market_chain = (
-    market_prompt
-    | llm
-    | StrOutputParser()
-)
+    return market_chain
 
 
 # ============================================================
@@ -164,25 +150,23 @@ market_chain = (
 # ============================================================
 
 def analyze_market(
-    question
+    question, *, company=None
 ):
 
     # --------------------------------------------------------
     # 1. Identify company
     # --------------------------------------------------------
 
-    company = identify_company(
-        question
-    )
+    resolution = resolve_company(question)
+    company = company or resolution.company
+    if company is not None and company not in universe:
+        raise ValueError("Unknown company scope.")
 
     if company is None:
 
         return {
             "company": None,
-            "answer": (
-                "I could not identify a company "
-                "from the FinAgent-X universe."
-            ),
+            "answer": identification_message(resolution),
             "market_data": None
         }
 
@@ -211,7 +195,7 @@ def analyze_market(
     # 3. Ask the LLM to interpret the data
     # --------------------------------------------------------
 
-    answer = market_chain.invoke(
+    answer = invoke_llm(get_market_chain(),
         {
             "question":
                 question,

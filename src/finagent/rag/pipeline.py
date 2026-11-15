@@ -1,53 +1,22 @@
-from .retrieval import retrieve_and_rerank
-from .generation import build_context, generation_chain
+from .retrieval import retrieve_with_policy
+from .generation import build_context, get_generation_chain
+from finagent.config.llm import invoke_llm
 
 
-# ============================================================
-# 1. RAG COMPLET
-# ============================================================
-
-def ask_rag(
-    question,
-    k=5
-):
-
-    # ------------------------------------------
-    # 1. Retrieval + reranking
-    # ------------------------------------------
-
-    documents = retrieve_and_rerank(
-        query=question,
-        k=k,
-        fetch_k=20
-    )
-
-
-    # ------------------------------------------
-    # 2. Construire le contexte
-    # ------------------------------------------
-
-    context = build_context(
-        documents
-    )
-
-
-    # ------------------------------------------
-    # 3. Génération
-    # ------------------------------------------
-
-    answer = generation_chain.invoke(
-        {
+def ask_rag(question, k=5, *, company=None):
+    result = retrieve_with_policy(question, k=k, fetch_k=max(20, k), company=company)
+    if not result.documents:
+        # Empty/ambiguous scopes never invoke a language model or fall back to old news.
+        answer = result.notice
+    else:
+        answer = invoke_llm(get_generation_chain(), {
             "question": question,
-            "context": context
-        }
-    )
-
-
-    return {
-        "question": question,
-        "answer": answer,
-        "documents": documents
-    }
+            "context": build_context(result.documents),
+        })
+        if result.notice:
+            answer = result.notice + "\n\n" + answer
+    return {"question": question, "answer": answer, "documents": result.documents,
+            "time_window": result.time_window, "retrieval_notice": result.notice}
 
 
 # ============================================================
