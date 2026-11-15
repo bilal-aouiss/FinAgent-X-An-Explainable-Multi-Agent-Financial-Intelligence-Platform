@@ -18,7 +18,7 @@ The dashboard includes market overview, company analysis, FinAgent AI chat, and 
 Clone the repository:
 
 ```bash
-git clone <https://github.com/bilal-aouiss/FinAgent-X-An-Explainable-Multi-Agent-Financial-Intelligence-Platform.git>
+git clone https://github.com/bilal-aouiss/FinAgent-X-An-Explainable-Multi-Agent-Financial-Intelligence-Platform.git FinAgent-X
 cd FinAgent-X
 ```
 
@@ -73,3 +73,7 @@ The dashboard will be available at:
 ```text
 http://localhost:8501
 ```
+
+## Disclaimer
+
+FinAgent-X is a research and portfolio project. Forecasts and technical indicators are experimental and should not be considered financial advice.
