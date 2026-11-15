@@ -1,4 +1,3 @@
-"""Extract the observed public article formats without changing entity matching."""
 import json
 import re
 from bs4 import BeautifulSoup
@@ -7,12 +6,6 @@ EXTRACTION_VERSION = 2
 
 
 def _split_blocks(blocks):
-    """Respect HTML paragraph breaks while retaining existing wrapper indices.
-
-    Some recaps put many issuers inside one wrapper separated by double BRs.
-    Keep the first fragment at the original index and append extra fragments;
-    ordinary wrappers and their historical document IDs stay unchanged.
-    """
     first, extra, origins, extra_origins = [], [], [], []
     for index, block in enumerate(blocks):
         fragments = re.split(r"(?:<br\s*/?>\s*){2,}|</p>\s*", str(block), flags=re.I)
@@ -33,8 +26,7 @@ def extract_article_blocks(html: str, expected_nid: int) -> dict:
     if blocks:
         return {"extraction_format": "newsTextDataWrapInner",
                 **_split_blocks(blocks)}
-    # Some publicly rendered articles contain email-editor divs instead of the
-    # normal wrapper. Only inspect this article's public Next.js content field.
+    
     script = soup.find("script", id="__NEXT_DATA__")
     if script:
         article = json.loads(script.string).get("props", {}).get("pageProps", {}).get("data", {})

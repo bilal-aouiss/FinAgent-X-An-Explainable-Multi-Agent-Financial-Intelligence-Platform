@@ -1,5 +1,3 @@
-"""Retrieval-only deduplication. Source rows and forecasting news stay intact."""
-
 import hashlib
 import json
 import pandas as pd

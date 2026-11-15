@@ -1,5 +1,3 @@
-"""Single official universe: 51 Bursa Malaysia companies, including 99 Speed Mart."""
-
 universe = {
 
     # ========================================================

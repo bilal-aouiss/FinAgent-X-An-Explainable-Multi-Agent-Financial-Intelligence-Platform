@@ -6,7 +6,6 @@ from finagent.config.llm import invoke_llm
 def ask_rag(question, k=5, *, company=None):
     result = retrieve_with_policy(question, k=k, fetch_k=max(20, k), company=company)
     if not result.documents:
-        # Empty/ambiguous scopes never invoke a language model or fall back to old news.
         answer = result.notice
     else:
         answer = invoke_llm(get_generation_chain(), {

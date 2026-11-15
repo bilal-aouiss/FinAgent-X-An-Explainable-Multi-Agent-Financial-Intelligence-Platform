@@ -1,5 +1,3 @@
-"""Lazy Gemini access shared by the API's graph and existing agents."""
-
 import os
 from pathlib import Path
 from threading import Lock
@@ -12,7 +10,6 @@ _last_call = 0.0
 
 
 def create_llm():
-    # Explicit path: launching uvicorn from the repository root must find src/.env.
     load_dotenv(Path(__file__).resolve().parents[2] / ".env")
     if not os.getenv("GOOGLE_API_KEY"):
         raise RuntimeError("Configure GOOGLE_API_KEY in src/.env to enable FinAgent AI.")
@@ -24,7 +21,6 @@ def create_llm():
 
 
 def invoke_llm(chain, inputs):
-    """Serialize calls and space them out; no quota-consuming retry loops."""
     global _last_call
     with _lock:
         interval = max(0.0, float(os.getenv("FINAGENT_LLM_INTERVAL_SECONDS", "6")))

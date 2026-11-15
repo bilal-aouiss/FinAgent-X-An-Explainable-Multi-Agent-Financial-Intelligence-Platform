@@ -1,5 +1,3 @@
-"""Small, side-effect-free market feature rules shared with the notebook."""
-
 import numpy as np
 import pandas as pd
 

@@ -1,5 +1,3 @@
-"""News availability for signals generated at 18:00 Asia/Kuala_Lumpur."""
-
 import re
 import pandas as pd
 
@@ -26,12 +24,6 @@ def publication_timestamp(row) -> pd.Timestamp:
 
 
 def align_news_to_signals(news: pd.DataFrame, market: pd.DataFrame) -> pd.DataFrame:
-    """Keep all source columns and add auditable mapping columns, without I/O.
-
-    Choose the first actual trading-session signal at or after publication.
-    News before a ticker's first market DATE is rejected (historical bug guard).
-    No synthetic business-day calendar and no news backfill beyond the last signal.
-    """
     result = news.copy()
     calendars = {}
     for ticker, group in market.groupby("ticker"):

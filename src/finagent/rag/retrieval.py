@@ -1,9 +1,3 @@
-"""FAISS candidates + CrossEncoder, with explicit company/date eligibility.
-
-Resources load on demand. Importing this module never downloads models or builds
-an index. Inject a corpus, store and reranker for small offline tests/notebooks.
-"""
-
 from copy import copy
 from dataclasses import dataclass
 from functools import lru_cache

@@ -1,5 +1,3 @@
-"""The dashboard talks only HTTP; ML models live in the backend process."""
-
 import os
 from urllib.parse import quote
 

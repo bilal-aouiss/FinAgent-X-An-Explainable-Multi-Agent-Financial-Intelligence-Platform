@@ -1,9 +1,3 @@
-"""Deterministic identification for the 51-company FinAgent-X universe.
-
-Longest overlapping names win; separate companies remain separate candidates.
-The scraper additionally requires a credible company name at the start of a block.
-"""
-
 from dataclasses import dataclass
 from functools import lru_cache
 import re
@@ -19,9 +13,6 @@ def normalize_name(value: str) -> str:
     value = re.sub(r"\b(?:[A-Za-z]\.){2,}[A-Za-z]?", lambda m: m[0].replace(".", ""), value)
     return " ".join(re.sub(r"[^\w]+", " ", value.casefold()).split())
 
-
-# These are exclusions, not another investment universe. In particular, a
-# subsidiary/REIT must not inherit its listed parent's short alias.
 EXCLUDED_NAMES = (
     "Sunway Real Estate Investment Trust", "Sunway REIT",
     "Sunway Healthcare", "Sunway Medical Centre",
@@ -139,8 +130,6 @@ def match_company_name(text: str) -> str | None:
         return None
     _, end, companies, term = leading[0]
     tail = normalized[end:].strip()
-    # Longest-match suppression can select an alias already ending in Bhd.
-    # Its legal suffix is just as conclusive as a suffix following a short alias.
     complete_legal_name = re.search(r"\b(?:bhd|berhad)$", term)
     if tail and not (complete_legal_name or _LEGAL_SUFFIX.match(tail) or _SUBJECT_CONTINUATION.match(tail)):
         return None

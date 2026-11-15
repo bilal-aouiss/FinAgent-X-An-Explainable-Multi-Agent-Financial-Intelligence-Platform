@@ -1,5 +1,3 @@
-"""Small explicit date policy, anchored to corpus publication dates, not today."""
-
 from dataclasses import dataclass
 from datetime import date, timedelta
 import calendar
