@@ -18,7 +18,7 @@ The dashboard includes market overview, company analysis, FinAgent AI chat, and 
 Clone the repository:
 
 ```bash
-git clone <YOUR_REPOSITORY_URL>
+git clone <https://github.com/bilal-aouiss/FinAgent-X-An-Explainable-Multi-Agent-Financial-Intelligence-Platform.git>
 cd FinAgent-X
 ```
 
